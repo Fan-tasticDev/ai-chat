@@ -6,7 +6,10 @@ export async function POST(request: NextRequest) {
     const { messages } = await request.json();
 
     if (!messages || !Array.isArray(messages)) {
-      return Response.json({ error: 'Invalid messages' }, { status: 400 });
+      return new Response(JSON.stringify({ error: 'Invalid messages' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     const response = await fetch(
@@ -23,7 +26,7 @@ export async function POST(request: NextRequest) {
             { role: 'system', content: '你是一个有帮助的助手。' },
             ...messages,
           ],
-          stream: false, // 第一天先非流式，确保通路
+          stream: true,  // 关键：启用流式
         }),
       }
     );
@@ -31,19 +34,25 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('API Error:', response.status, errorText);
-      return Response.json({ error: 'API call failed' }, { status: response.status });
+      return new Response(JSON.stringify({ error: 'API call failed' }), {
+        status: response.status,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    const data = await response.json();
-    const assistantMessage = data.choices?.[0]?.message;
-
-    if (!assistantMessage) {
-      return Response.json({ error: 'No response from AI' }, { status: 500 });
-    }
-
-    return Response.json({ message: assistantMessage });
+    // 直接将上游的流式响应体透传，并设置正确的 SSE 响应头
+    return new Response(response.body, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
   } catch (error) {
     console.error('Server error:', error);
-    return Response.json({ error: 'Internal server error' }, { status: 500 });
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
