@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useConversations } from "@/hooks/useConversations";
 import { ChatMessage } from "@/lib/db";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import MarkdownRenderer from "@/components/MarkdownRenderer";
+import MessageItem from "@/components/MessageItem";
 
 export default function Home() {
   const {
@@ -18,7 +18,8 @@ export default function Home() {
   } = useConversations();
 
   // 手动获取当前会话
-  const currentConversation = conversations.find(c => c.id === currentId) || null;
+  const currentConversation =
+    conversations.find((c) => c.id === currentId) || null;
 
   const [displayMessages, setDisplayMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -97,7 +98,10 @@ export default function Home() {
       }
 
       // 流式结束后保存最终消息
-      const finalMessages = [...newMessages, { role: "assistant" as const, content: accumulated }];
+      const finalMessages = [
+        ...newMessages,
+        { role: "assistant" as const, content: accumulated },
+      ];
       await saveMessages(currentId, finalMessages);
       setDisplayMessages(finalMessages);
     } catch (error) {
@@ -117,7 +121,9 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center text-gray-400">加载中...</div>
+      <div className="flex h-screen items-center justify-center text-gray-400">
+        加载中...
+      </div>
     );
   }
 
@@ -133,9 +139,9 @@ export default function Home() {
 
       {/* 左侧栏 */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4 flex flex-col transform transition-transform md:transform-none ${
+        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 p-4 flex flex-col transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        } md:translate-x-0 md:transition-none`}
       >
         <button
           onClick={() => setSidebarOpen(false)}
@@ -183,7 +189,9 @@ export default function Home() {
             </div>
           ))}
           {conversations.length === 0 && (
-            <div className="text-gray-400 text-sm text-center mt-4">暂无会话</div>
+            <div className="text-gray-400 text-sm text-center mt-4">
+              暂无会话
+            </div>
           )}
         </div>
       </aside>
@@ -195,8 +203,18 @@ export default function Home() {
             onClick={() => setSidebarOpen(true)}
             className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
           </button>
           <ThemeToggle />
@@ -211,31 +229,21 @@ export default function Home() {
             <div className="max-w-4xl mx-auto space-y-4">
               {displayMessages.map((msg, idx) => {
                 const isLastAssistant =
-                  msg.role === "assistant" && idx === displayMessages.length - 1;
+                  msg.role === "assistant" &&
+                  idx === displayMessages.length - 1;
                 const isStreamingMsg = isStreaming && isLastAssistant;
 
                 return (
-                  <div
+                  <MessageItem
                     key={idx}
-                    className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                  >
-                    {msg.role === "user" ? (
-                      <div className="max-w-[85%] md:max-w-[80%] rounded-2xl bg-blue-500 text-white px-4 py-2 text-sm whitespace-pre-wrap">
-                        {msg.content}
-                      </div>
-                    ) : (
-                      <div className="max-w-[90%] md:max-w-[80%] rounded-2xl bg-gray-100 dark:bg-gray-800 px-4 py-2 text-sm">
-                        {isStreamingMsg ? (
-                          <>
-                            <span className="whitespace-pre-wrap">{msg.content}</span>
-                            <span className="inline-block w-1 h-4 bg-gray-500 ml-1 animate-pulse" />
-                          </>
-                        ) : (
-                          <MarkdownRenderer content={msg.content} />
-                        )}
-                      </div>
-                    )}
-                  </div>
+                    content={msg.content}
+                    role={msg.role}
+                    isStreaming={
+                      isStreaming &&
+                      msg.role === "assistant" &&
+                      idx === displayMessages.length - 1
+                    }
+                  />
                 );
               })}
               <div ref={messagesEndRef} />
