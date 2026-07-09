@@ -28,4 +28,4 @@
 5. 访问 http://localhost:3000
 
 ## 在线演示
-[Vercel 部署链接]（https://ai-chat-theta-orpin.vercel.app/）
+[Vercel 部署链接](https://ai-chat-theta-orpin.vercel.app/)
